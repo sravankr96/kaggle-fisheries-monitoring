@@ -63,19 +63,20 @@ class CDReader:
             self.data.extend((fname, cat) for fname in _listdir(path))
         random.shuffle(self.data)
 
-    def _read_full(self):
-        images = (io.imread(fname) for fname, _ in self.data)
+    def _read_part(self, i, j):
+        images = (io.imread(fname) for fname, _ in self.data[i:j])
         X = np.array([resize(im, self.image_shape) for im in images])
-        Y = np.array([cat for _, cat in self.data])
+        Y = np.array([cat for _, cat in self.data[i:j]])
         return X, Y
+
+
+    def _read_full(self):
+        return self._read_part(0, len(self.data))
 
     def _read_in_batches(self):
         for start in range(0, len(self.data), self.batch_size):
             end = start + self.batch_size
-            images = (io.imread(fname) for fname, _ in self.data[start:end])
-            X = np.array([resize(im, self.image_shape) for im in images])
-            Y = np.array([cat for _, cat in self.data[start:end]])
-            yield X, Y
+            yield self._read_part(start, end)
 
 
 class ADReader:
@@ -142,3 +143,39 @@ class ADReader:
             end = start + self.batch_size
             X, Y = self._read_part(start, end)
             yield X, Y
+
+
+class ImagesReader:
+    """Reads raw images from dirpath
+    """
+    def __init__(self, dirpath, image_shape=(227, 227, 3), batched=False,
+                 batch_size=1024, strategy='random'):
+        if not os.path.isdir(dirpath):
+            raise FileNotFoundError()
+
+        self.dirpath = dirpath
+        self.image_shape = image_shape
+        self.batched = batched
+        self.batch_size = batch_size if batched else None
+        self.strategy = strategy
+
+        if batched is False:
+            self.read = self._read_full
+        else:
+            self.read = self._read_in_batches
+
+        self.img_paths = [fname for fname in _listdir(dirpath)]
+        random.shuffle(self.img_paths)
+
+    def _read_part(self, i, j):
+        images = (io.imread(img_path) for img_path in self.img_paths[i:j])
+        X = np.array([resize(im, self.image_shape) for im in images])
+        return X
+
+    def _read_full(self):
+        return self._read_part(0, len(self.img_paths))
+
+    def _read_in_batches(self):
+        for start in range(0, len(self.img_paths), self.batch_size):
+            end = start + self.batch_size
+            yield self._read_part(start, end)
