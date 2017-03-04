@@ -1,5 +1,5 @@
 """
-Copyright © Divyanshu Kakwani 201t7, all rights reserved.
+Copyright © Divyanshu Kakwani 2017, all rights reserved.
 
 This module contains several dataset reader classes.
 
@@ -104,27 +104,41 @@ class ADReader:
                     fname = l['filename']
                     if len(l['annotations']) > 0:
                         fa = l['annotations'][0]    # first annotation
-                        coords = (fa['height'], fa['width'], fa['x'], fa['y'])
+                        coords = [fa['height'], fa['width'], fa['x'], fa['y']]
                         self.labels[fname] = coords
 
         subdir_paths = [p for p in _listdir(images_dirpath) if os.path.isdir(p)]
-        self.data = []
+        self.img_paths = []
         for path in subdir_paths:
-            self.data.extend(fname for fname in _listdir(path)
-                             if basename(fname) in self.labels)
-        random.shuffle(self.data)
+            self.img_paths.extend(img_path for img_path in _listdir(path)
+                             if basename(img_path) in self.labels)
+        random.shuffle(self.img_paths)
+
+
+    def _read_part(self, i, j):
+        """
+        Reads paths contained in img_paths[i:j] and prepares the data
+        in the standard format (X, Y) where X contains the images and
+        Y contains the transformed coordinates.
+        """
+        X, Y = [], []
+        for img_path in self.img_paths[i:j]: 
+            image = io.imread(img_path)
+            fname = basename(img_path)
+            rsz_factor_x = image.shape[1] / self.image_shape[1]
+            rsz_factor_y = image.shape[0] / self.image_shape[0]
+            coords = self.labels[basename(fname)]
+            transed_coords = [coords[0]/rsz_factor_y, coords[1]/rsz_factor_x,
+                              coords[2]/rsz_factor_x, coords[3]/rsz_factor_y]
+            X.append(resize(image, self.image_shape))
+            Y.append(transed_coords)
+        return np.array(X), np.array(Y)
 
     def _read_full(self):
-        images = (io.imread(fname) for fname in self.data)
-        X = np.array([resize(im, self.image_shape) for im in images])
-        Y = np.array([self.labels[basename(fname)] for fname in self.data])
-        return X, Y
+        return self._read_part(0, len(self.img_paths))
 
     def _read_in_batches(self):
-        for start in range(0, len(self.data), self.batch_size):
+        for start in range(0, len(self.img_paths), self.batch_size):
             end = start + self.batch_size
-            images = (io.imread(fname) for fname in self.data[start:end])
-            X = np.array([resize(im, self.image_shape) for im in images])
-            Y = np.array([self.labels[basename(fname)] 
-                          for fname in self.data[start:end]])
+            X, Y = self._read_part(start, end)
             yield X, Y
