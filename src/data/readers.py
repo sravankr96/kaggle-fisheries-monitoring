@@ -3,9 +3,10 @@ Copyright © Divyanshu Kakwani 2017, all rights reserved.
 
 This module contains several dataset reader classes.
 
-Each reader reads a specific type of dataset and implements
-multiple reading strategies.
-
+A reader encapsulates:
+    The storage format of the data on the disk
+    The reading order of the data points in the data
+    The per-datapoint preprocessing operations
 """
 
 import os
