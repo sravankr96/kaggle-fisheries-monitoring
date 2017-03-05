@@ -13,7 +13,7 @@ import random
 import json
 import numpy as np
 
-from skimage import io
+from skimage import io, img_as_ubyte
 from skimage.transform import resize
 from os.path import basename
 
@@ -65,10 +65,10 @@ class CDReader:
 
     def _read_part(self, i, j):
         images = (io.imread(fname) for fname, _ in self.data[i:j])
-        X = np.array([resize(im, self.image_shape) for im in images])
+        X = np.array([img_as_ubyte(resize(im, self.image_shape))
+                      for im in images])
         Y = np.array([cat for _, cat in self.data[i:j]])
         return X, Y
-
 
     def _read_full(self):
         return self._read_part(0, len(self.data))
@@ -115,7 +115,6 @@ class ADReader:
                              if basename(img_path) in self.labels)
         random.shuffle(self.img_paths)
 
-
     def _read_part(self, i, j):
         """
         Reads paths contained in img_paths[i:j] and prepares the data
@@ -131,7 +130,7 @@ class ADReader:
             coords = self.labels[basename(fname)]
             transed_coords = [coords[0]/rsz_factor_y, coords[1]/rsz_factor_x,
                               coords[2]/rsz_factor_x, coords[3]/rsz_factor_y]
-            X.append(resize(image, self.image_shape))
+            X.append(img_as_ubyte(resize(image, self.image_shape)))
             Y.append(transed_coords)
         return np.array(X), np.array(Y)
 
@@ -169,7 +168,8 @@ class ImagesReader:
 
     def _read_part(self, i, j):
         images = (io.imread(img_path) for img_path in self.img_paths[i:j])
-        X = np.array([resize(im, self.image_shape) for im in images])
+        X = np.array([img_as_ubyte(resize(im, self.image_shape))
+                      for im in images])
         return X
 
     def _read_full(self):
