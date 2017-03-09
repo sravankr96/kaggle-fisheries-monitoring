@@ -10,11 +10,12 @@ A reader encapsulates:
 """
 
 import os
+import sys
 import random
 import json
 import numpy as np
 
-from skimage import io, img_as_ubyte
+from skimage import io
 from skimage.transform import resize
 from os.path import basename
 
@@ -25,6 +26,15 @@ def _listdir(dirpath):
     """
     names = os.listdir(dirpath)
     return [os.path.join(dirpath, n) for n in names]
+
+
+def _print_progressbar(done, total):
+    done = min(total, done)
+    per_30 = int((done/total)*30)
+    ratio = '%s/%s' % (done, total)
+    sys.stdout.write('\r')
+    sys.stdout.write("[%-30s] %s" % ('='*per_30, ratio))
+    sys.stdout.flush()
 
 
 class CDReader:
@@ -66,18 +76,27 @@ class CDReader:
 
     def _read_part(self, i, j):
         images = (io.imread(fname) for fname, _ in self.data[i:j])
-        X = np.array([img_as_ubyte(resize(im, self.image_shape))
-                      for im in images])
-        Y = np.array([cat for _, cat in self.data[i:j]])
+        X = [resize(im, self.image_shape) for im in images]
+        Y = [cat for _, cat in self.data[i:j]]
         return X, Y
 
     def _read_full(self):
-        return self._read_part(0, len(self.data))
+        tot = len(self.data)
+        at_once = max(20, tot/20)
+        X, Y = [], []
+        _print_progressbar(0, tot)
+        for i in range(0, len(self.data), at_once):
+            X_sub, Y_sub = self._read_part(i, i + at_once)
+            X.extend(X_sub)
+            Y.extend(Y_sub)
+            _print_progressbar(i+at_once, tot)
+        return (np.array(X), np.array(Y))
 
     def _read_in_batches(self):
         for start in range(0, len(self.data), self.batch_size):
             end = start + self.batch_size
-            yield self._read_part(start, end)
+            X, Y = self._read_part(start, end)
+            yield (np.array(X), np.array(Y))
 
 
 class ADReader:
@@ -91,14 +110,14 @@ class ADReader:
         self.batched = batched
         self.batch_size = batch_size if batched else None
         self.strategy = strategy
-        
+
         if batched is False:
             self.read = self._read_full
         else:
             self.read = self._read_in_batches
-        
+
         self.labels_subdirpaths = _listdir(self.labels_dirpath)
-        self.labels = {} # maps filenames to a 4-tuple representing the bbox
+        self.labels = {}  # maps filenames to a 4-tuple representing the bbox
         for path in self.labels_subdirpaths:
             with open(path, 'r') as fp:
                 labels_cat = json.load(fp)
@@ -109,11 +128,12 @@ class ADReader:
                         coords = [fa['height'], fa['width'], fa['x'], fa['y']]
                         self.labels[fname] = coords
 
-        subdir_paths = [p for p in _listdir(images_dirpath) if os.path.isdir(p)]
+        subdir_paths = [p for p in _listdir(images_dirpath)
+                        if os.path.isdir(p)]
         self.img_paths = []
         for path in subdir_paths:
             self.img_paths.extend(img_path for img_path in _listdir(path)
-                             if basename(img_path) in self.labels)
+                                  if basename(img_path) in self.labels)
         random.shuffle(self.img_paths)
 
     def _read_part(self, i, j):
@@ -123,7 +143,7 @@ class ADReader:
         Y contains the transformed coordinates.
         """
         X, Y = [], []
-        for img_path in self.img_paths[i:j]: 
+        for img_path in self.img_paths[i:j]:
             image = io.imread(img_path)
             fname = basename(img_path)
             rsz_factor_x = image.shape[1] / self.image_shape[1]
@@ -131,7 +151,7 @@ class ADReader:
             coords = self.labels[basename(fname)]
             transed_coords = [coords[0]/rsz_factor_y, coords[1]/rsz_factor_x,
                               coords[2]/rsz_factor_x, coords[3]/rsz_factor_y]
-            X.append(img_as_ubyte(resize(image, self.image_shape)))
+            X.append(resize(image, self.image_shape))
             Y.append(transed_coords)
         return np.array(X), np.array(Y)
 
@@ -169,8 +189,7 @@ class ImagesReader:
 
     def _read_part(self, i, j):
         images = (io.imread(img_path) for img_path in self.img_paths[i:j])
-        X = np.array([img_as_ubyte(resize(im, self.image_shape))
-                      for im in images])
+        X = np.array([resize(im, self.image_shape) for im in images])
         return X
 
     def _read_full(self):
