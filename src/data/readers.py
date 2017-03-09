@@ -82,7 +82,7 @@ class CDReader:
 
     def _read_full(self):
         tot = len(self.data)
-        at_once = max(20, tot/20)
+        at_once = max(20, tot//20)
         X, Y = [], []
         _print_progressbar(0, tot)
         for i in range(0, len(self.data), at_once):
@@ -153,16 +153,25 @@ class ADReader:
                               coords[2]/rsz_factor_x, coords[3]/rsz_factor_y]
             X.append(resize(image, self.image_shape))
             Y.append(transed_coords)
-        return np.array(X), np.array(Y)
+        return X, Y
 
     def _read_full(self):
-        return self._read_part(0, len(self.img_paths))
+        tot = len(self.img_paths)
+        at_once = max(20, tot//20)
+        X, Y = [], []
+        _print_progressbar(0, tot)
+        for i in range(0, len(self.img_paths), at_once):
+            X_sub, Y_sub = self._read_part(i, i + at_once)
+            X.extend(X_sub)
+            Y.extend(Y_sub)
+            _print_progressbar(i+at_once, tot)
+        return (np.array(X), np.array(Y))
 
     def _read_in_batches(self):
         for start in range(0, len(self.img_paths), self.batch_size):
             end = start + self.batch_size
             X, Y = self._read_part(start, end)
-            yield X, Y
+            yield np.array(X), np.array(Y)
 
 
 class ImagesReader:
