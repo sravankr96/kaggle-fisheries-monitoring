@@ -11,7 +11,7 @@ Copyright © Sr@1 2017, All rights reserved.
 """
 
 from keras.models import Sequential
-from keras.layers import Activation, Convolution2D, MaxPooling2D, Dropout, Dense
+from keras.layers import Activation, Convolution2D, MaxPooling2D, Dropout, Dense, InputLayer
 import keras.backend as K
 
 
@@ -27,7 +27,7 @@ class LocalizerAsRegrModel(Sequential):
         def center_normalize(x):
             return (x - K.mean(x)) / K.std(x)
 
-        super(Sequential).__init__()
+        super(LocalizerAsRegrModel, self).__init__()
 
         self.add(Activation(activation=center_normalize, input_shape=self.shape))
 
@@ -41,19 +41,19 @@ class LocalizerAsRegrModel(Sequential):
         self.add(Convolution2D(32, 3, 3, border_mode='same', activation=self.activation, dim_ordering='tf'))
 
         # 64
-        self.add(Convolution2D(64, 3, 3, border_mode='same', activation=self.activation, strides=(2, 2),
+        self.add(Convolution2D(64, 3, 3, border_mode='same', activation=self.activation, subsample=(2, 2),
                                dim_ordering='tf'))
         self.add(Convolution2D(64, 3, 3, border_mode='same', activation=self.activation, dim_ordering='tf'))
         self.add(Convolution2D(64, 3, 3, border_mode='same', activation=self.activation, dim_ordering='tf'))
 
         # 32
-        self.add(Convolution2D(128, 3, 3, border_mode='same', activation=self.activation, strides=(2, 2),
+        self.add(Convolution2D(128, 3, 3, border_mode='same', activation=self.activation, subsample=(2, 2),
                                dim_ordering='tf'))
         self.add(Convolution2D(128, 3, 3, border_mode='same', activation=self.activation, dim_ordering='tf'))
         self.add(Convolution2D(128, 3, 3, border_mode='same', activation=self.activation, dim_ordering='tf'))
 
         # 16
-        self.add(Convolution2D(256, 3, 3, border_mode='same', activation=self.activation, strides=(2, 2),
+        self.add(Convolution2D(256, 3, 3, border_mode='same', activation=self.activation, subsample=(2, 2),
                                dim_ordering='tf'))
         self.add(Convolution2D(256, 3, 3, border_mode='same', activation=self.activation, dim_ordering='tf'))
         self.add(Convolution2D(256, 3, 3, border_mode='same', activation=self.activation, dim_ordering='tf'))
