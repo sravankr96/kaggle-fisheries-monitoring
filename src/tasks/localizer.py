@@ -28,7 +28,8 @@ hyper_params = {'optimizer': adam(lr=1e-4),
                 'input_shape': input_shape,
                 'activation': 'relu'}
 
-reader = ADReader(images_dirpath='./../datasets/train_subset', labels_dirpath='./../datasets/labels', image_shape=input_shape)
+reader = ADReader(images_dirpath='./../datasets/train_subset',
+                  labels_dirpath='./../datasets/labels', image_shape=input_shape)
 X_all, Y_all = reader.read()
 
 

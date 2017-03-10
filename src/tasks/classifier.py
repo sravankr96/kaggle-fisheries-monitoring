@@ -18,6 +18,8 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.optimizers import adam
 from model_archs.raw_image_classifier import RawImageClassifier
 from data.readers import CDReader
+from keras.utils import np_utils
+from sklearn.preprocessing import LabelEncoder
 
 input_shape = (90, 160, 3)
 
@@ -30,7 +32,11 @@ epochs = 10
 # Reading the datasets using categorical dataset reader
 reader = CDReader(dirpath='./../datasets/train_subset', image_shape=input_shape)
 X_all, Y_all = reader.read()
-print(Y_all.shape)
+
+# Encoding Labels
+Y_all = LabelEncoder().fit_transform(Y_all)
+Y_all = np_utils.to_categorical(Y_all)
+
 
 # Loading the model from raw-image-classifier.py
 model = RawImageClassifier(hyper_params)
