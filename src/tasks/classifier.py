@@ -1,13 +1,13 @@
 """
 Copyright © Sr@1 2017, All rights reserved
 
-    *The NN model is imported from /model_archs/localizer_as_regr.py
+    *The NN model is imported from /model_archs/raw_image_classifier.py
 
     *The Hyper parameters can be set here
 
     *The data is split into train and test sets for training and validation
 
-    *The run_localizer() modul is used to:
+    *The run_classifier() modul is used to:
         *Train the model and validate it
         *save the best weights of the model
         *save the model to JSON file
@@ -31,7 +31,7 @@ epochs = 10
 
 # Reading the datasets using categorical dataset reader
 print("Reading dataset for Classification")
-reader = CDReader(dirpath='./../datasets/train_subset', image_shape=input_shape)
+reader = CDReader(dirpath='./../datasets/train', image_shape=input_shape)
 X_all, Y_all = reader.read()
 
 

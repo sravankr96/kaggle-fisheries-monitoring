@@ -29,7 +29,7 @@ hyper_params = {'optimizer': adam(lr=1e-4),
                 'activation': 'relu'}
 
 print("Reading dataset for localisation")
-reader = ADReader(images_dirpath='./../datasets/train_subset',
+reader = ADReader(images_dirpath='./../datasets/train',
                   labels_dirpath='./../datasets/labels', image_shape=input_shape)
 X_all, Y_all = reader.read()
 
