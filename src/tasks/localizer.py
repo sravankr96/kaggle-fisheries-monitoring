@@ -20,7 +20,7 @@ from model_archs.localizer_as_regr import LocalizerAsRegrModel
 from data.readers import ADReader
 
 
-input_shape = (256, 256, 3)
+input_shape = (90, 130, 3)
 epochs = 50
 
 hyper_params = {'optimizer': adam(lr=1e-4),
@@ -28,10 +28,10 @@ hyper_params = {'optimizer': adam(lr=1e-4),
                 'input_shape': input_shape,
                 'activation': 'relu'}
 
+print("Reading dataset for localisation")
 reader = ADReader(images_dirpath='./../datasets/train_subset',
                   labels_dirpath='./../datasets/labels', image_shape=input_shape)
 X_all, Y_all = reader.read()
-
 
 # Loading the model architecture
 model = LocalizerAsRegrModel(hyper_params)
@@ -39,17 +39,18 @@ model = LocalizerAsRegrModel(hyper_params)
 
 def run_localizer():
 
+    print("Starting Loacaliser")
     # Early stopping and fitting the data into the model
     early_stopping = EarlyStopping(monitor='val_loss', patience=4, verbose=1, mode='auto')
 
     # Creating checkpoints using callbacks
-    filepath = "localizer-as-regr-model-weights-best.hdf5"
+    filepath = "./../outputs/localizer-as-regr-model-weights-best.hdf5"
     checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max', period=1)
 
     model.fit(X_all, Y_all, batch_size=64, nb_epoch=epochs,
               validation_split=0.2, verbose=1, shuffle=True, callbacks=[early_stopping, checkpoint])
 
     # Saving the model to a json file
-    f1 = open('localizer-as-regr-model.json', 'w')
+    f1 = open('./../outputs/localizer-as-regr-model.json', 'w')
     f1.write(model.to_json())
     f1.close()

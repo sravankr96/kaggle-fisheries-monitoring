@@ -30,12 +30,16 @@ hyper_params = {'optimizer': adam(lr=1e-3),
 epochs = 10
 
 # Reading the datasets using categorical dataset reader
+print("Reading dataset for Classification")
 reader = CDReader(dirpath='./../datasets/train_subset', image_shape=input_shape)
 X_all, Y_all = reader.read()
+
 
 # Encoding Labels
 Y_all = LabelEncoder().fit_transform(Y_all)
 Y_all = np_utils.to_categorical(Y_all)
+
+print("\n", X_all.shape, "\n", Y_all.shape)
 
 
 # Loading the model from raw-image-classifier.py
@@ -44,17 +48,18 @@ model = RawImageClassifier(hyper_params)
 
 def run_classifier():
 
+    print("Starting Classifier")
     # Early stopping and fitting the data into the model
     early_stopping = EarlyStopping(monitor='val_loss', patience=4, verbose=1, mode='auto')
 
     # Creating checkpoints using callbacks
-    filepath = "classifier-weights-best.hdf5"
+    filepath = "./../outputs/classifier-weights-best.hdf5"
     checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max', period=1)
 
     model.fit(X_all, Y_all, batch_size=64, nb_epoch=epochs,
               validation_split=0.2, verbose=1, shuffle=True, callbacks=[early_stopping, checkpoint])
 
     # Saving the model to a json file
-    f1 = open('raw-image-classifier-model.json', 'w')
+    f1 = open('./../outputs/raw-image-classifier-model.json', 'w')
     f1.write(model.to_json())
     f1.close()

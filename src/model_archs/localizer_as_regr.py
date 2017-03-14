@@ -11,7 +11,7 @@ Copyright © Sr@1 2017, All rights reserved.
 """
 
 from keras.models import Sequential
-from keras.layers import Activation, Convolution2D, MaxPooling2D, Dropout, Dense, InputLayer
+from keras.layers import Activation, Convolution2D, MaxPooling2D, Dropout, Dense, Flatten
 import keras.backend as K
 
 
@@ -59,9 +59,10 @@ class LocalizerAsRegrModel(Sequential):
         self.add(Convolution2D(256, 3, 3, border_mode='same', activation=self.activation, dim_ordering='tf'))
 
         # 8
-        self.add(MaxPooling2D(pool_size=(8, 8), dim_ordering='tf'))
+        self.add(MaxPooling2D(pool_size=(4, 4), dim_ordering='tf'))
         self.add(Dropout(0.5))
 
+        self.add(Flatten())
         self.add(Dense(4))
 
         self.compile(loss=self.objective, optimizer=self.optimizer, metrics=['accuracy'])
